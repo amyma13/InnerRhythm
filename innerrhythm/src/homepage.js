@@ -118,6 +118,7 @@ const getTotalEmotions = () => {
     //getSongsMood();
   }, []);
 
+  // THIS IS WHERE TO GET SONGS BASED OFF YOUR MOOD, NEED TO SAVE DATA SOMEWHERE + TAILOR IT TO THE NEW CREATED MOODS
   const getSongsMood = async () => {
     const token = sessionStorage.getItem("spotify_access_token");
 
