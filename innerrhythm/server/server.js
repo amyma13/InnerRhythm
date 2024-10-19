@@ -14,35 +14,42 @@ const CLIENT_ID = process.env.CLIENT_ID || 'dedb9569c9b441428ebc8905d8be2df8';
 const CLIENT_SECRET = process.env.CLIENT_SECRET || 'a7587750dc7f4a15b81143bc1e26976d';
 const REDIRECT_URI = 'http://localhost:3000'; // Ensure it matches with your Spotify redirect URI
 
-// Route to handle token exchange
+//app.use(bodyParser.json());
+
 app.post('/token', async (req, res) => {
-    const code = req.body.code; // Get the authorization code from the request
+    const { code } = req.body;
 
-    const data = new URLSearchParams({
-        grant_type: 'authorization_code',
-        code: code,
-        redirect_uri: REDIRECT_URI,
-        client_id: CLIENT_ID,
-        client_secret: CLIENT_SECRET,
-    });
-
+    // Exchange the authorization code for an access token
     try {
-        // Make a POST request to Spotify's API for exchanging code for tokens
-        const response = await axios.post('https://accounts.spotify.com/api/token', data.toString(), {
+        const token_response = await axios.post('https://accounts.spotify.com/api/token', null, {
+            params: {
+                grant_type: 'authorization_code',
+                code: code,
+                redirect_uri: 'http://localhost:3000', // Must match the redirect URI used in the login
+                client_id: 'dedb9569c9b441428ebc8905d8be2df8', // Your Spotify client ID
+                client_secret: 'a7587750dc7f4a15b81143bc1e26976d', // Your Spotify client secret
+            },
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
         });
+        const accessToken = token_response.data.access_token;
 
-        // Send the access token and other info back to the client
-        res.json({
-            access_token: response.data.access_token,
-            refresh_token: response.data.refresh_token,
-            expires_in: response.data.expires_in,
+        // Make a request to Spotify's User Profile API to get user information
+        const userProfileResponse = await axios.get('https://api.spotify.com/v1/me', {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
         });
+        const displayName = userProfileResponse.data.display_name;
+        res.json({
+            access_token: accessToken,
+            display_name: displayName, // Return the display name of the user
+        });
+        
     } catch (error) {
         console.error('Error exchanging code for token:', error);
-        res.status(500).send('Error exchanging code for token');
+        res.status(500).json({ error: 'Failed to exchange code for token' });
     }
 });
 

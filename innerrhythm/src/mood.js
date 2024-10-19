@@ -1,13 +1,39 @@
 import React, { useState } from 'react';
 import { useHistory, Link } from 'react-router-dom';
+import { db } from "./firebase";
+import { collection, doc, setDoc, getDoc } from "firebase/firestore";
 
 function Mood() {
   const history = useHistory();
   const [mood, setMood] = useState("");
 
-  const goToHomePage = (selectedMood) => {
+  const goToHomePage = async (selectedMood) => {
+
+    // testing firebase
+    const username = "Arianna";
+    try {
+        const findDoc = doc(db, "Users", username);
+        const docUserInfo = await getDoc(findDoc);
+        if (docUserInfo.exists()) {
+            console.log("Username taken");
+        }
+        else {
+            const ref = collection(db, "Users");
+            await setDoc(doc(ref, username), {
+                username: username,
+                emotions: ["happy", "sad", "angry"],
+                activities: [""],
+            });
+            console.log("Uploaded user")
+        }
+    }
+    catch (error){
+        console.log("Error uploading to database: "+error);
+    }
+     
+
     setMood(selectedMood);
-    history.push('/homepage', { mood: selectedMood });
+    // history.push('/homepage', { mood: selectedMood });
   }
 
   return (
