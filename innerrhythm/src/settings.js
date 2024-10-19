@@ -1,9 +1,10 @@
-// Settings.js
 import React, { useState } from 'react';
+import { useHistory } from 'react-router-dom'; // Import useHistory
 
 function Settings() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [theme, setTheme] = useState('light');
+  const history = useHistory(); // Initialize useHistory
 
   const handleNotificationToggle = () => {
     setNotificationsEnabled(!notificationsEnabled);
@@ -11,6 +12,11 @@ function Settings() {
 
   const handleThemeChange = (event) => {
     setTheme(event.target.value);
+  };
+
+  const handleBackClick = () => {
+    history.push('/homepage'); 
+    window.location.reload();
   };
 
   return (
@@ -49,6 +55,14 @@ function Settings() {
         <p className="text-lg">Adjust your privacy settings.</p>
         {/* Add more privacy-related options here */}
       </div>
+
+      {/* Back Button */}
+      <button 
+        onClick={handleBackClick} 
+        className="mt-5 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
+      >
+        Back to Home
+      </button>
     </div>
   );
 }

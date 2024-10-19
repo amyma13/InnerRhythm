@@ -12,14 +12,74 @@ function HomePage() {
   const [newMoodName, setNewMoodName] = useState('');
   const [newMoodPlaylist, setNewMoodPlaylist] = useState('');
   const dropdownRef = useRef(null);
+  const [emotionValues, setEmotionValues] = useState({
+    Happy: 0,
+    Sad: 0,
+    Calm: 0,
+    Angry: 0,
+    Anxious: 0,
+    Excited: 0,
+});
+  const moodValues = {
+    happy: {
+        target_energy: 0.8,
+        target_danceability: 0.8,
+        target_valence: 0.9,
+        min_tempo: 120,
+        max_tempo: 140
+    },
+    sad: {
+        target_energy: 0.2,
+        target_danceability: 0.2,
+        target_valence: 0.2,
+        min_tempo: 60,
+        max_tempo: 80
+    },
+    angry: {
+        target_energy: 0.9,
+        target_danceability: 0.6,
+        target_valence: 0.3,
+        min_tempo: 140,
+        max_tempo: 160,
+    },
+    calm: {
+        target_energy: 0.2,        
+        target_danceability: 0.4,  
+        target_valence: 0.5,       
+        min_tempo: 60,            
+        max_tempo: 80,             
+    },
+    anxious: {
+        target_energy: 0.6,        
+        target_danceability: 0.5, 
+        target_valence: 0.4,      
+        min_tempo: 100,           
+        max_tempo: 120,          
+    },
+    excited: {
+        target_energy: 0.7,        
+        target_danceability: 0.7, 
+        target_valence: 0.8,      
+        min_tempo: 120,           
+        max_tempo: 140,          
+    },
+};
 
+const handleEmotionChange = (emotion, value) => {
+  const parsedValue = Math.max(0, Math.min(100, parseInt(value) || 0)); // Ensure the value is between 0 and 100
+  setEmotionValues(prev => ({ ...prev, [emotion]: parsedValue }));
+};
+
+const getTotalEmotions = () => {
+  return Object.values(emotionValues).reduce((a, b) => a + b, 0);
+};
   const toggleMood = (id) => {
     setExpandedMood(expandedMood === id ? null : id);
   };
 
   useEffect(() => {
     const fetchProfilePhoto = async () => {
-      const token = localStorage.getItem('spotify_access_token');
+      const token = sessionStorage.getItem('spotify_access_token');
       if (token) {
         try {
           const response = await fetch('https://api.spotify.com/v1/me', {
@@ -36,7 +96,7 @@ function HomePage() {
     };
 
     const fetchMoods = async () => {
-      const username = "Colin"; // get username later
+      const username = sessionStorage.getItem("username"); // get username later
       try {
         const findDoc = doc(db, "Users", username);
         const docUserInfo = await getDoc(findDoc);
@@ -55,14 +115,62 @@ function HomePage() {
 
     fetchProfilePhoto();
     fetchMoods();
+    //getSongsMood();
   }, []);
+
+  const getSongsMood = async () => {
+    const token = sessionStorage.getItem("spotify_access_token");
+
+    // Loop through each mood in moodValues
+    for (const mood in moodValues) {
+        const moodParams = moodValues[mood];  // Get the parameters for each mood
+        console.log(`Fetching songs for mood: ${mood}`);
+
+        try {
+            const url = new URL('https://api.spotify.com/v1/recommendations');
+
+            // Append query parameters
+            const params = {
+                limit: 3,  // Limit to 3 songs per mood
+                market: 'US',
+                seed_genres: 'pop,rock',  // Example seed genres
+                target_energy: moodParams.target_energy,
+                target_danceability: moodParams.target_danceability,
+                target_valence: moodParams.target_valence,
+                min_tempo: moodParams.min_tempo,
+                max_tempo: moodParams.max_tempo
+            };
+
+            Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                }
+            });
+
+            const data = await response.json();
+
+            // Check if data.tracks exists and is an array before accessing it
+            if (data && data.tracks && Array.isArray(data.tracks)) {
+                const songNames = data.tracks.map(track => track.name);  // Extract song names
+                console.log(`Songs for ${mood}:`, songNames);
+            } else {
+                console.log(`No tracks found for mood: ${mood}`, data);
+            }
+
+        } catch (error) {
+            console.error(`Error fetching songs for mood ${mood}:`, error);
+        }
+    }
+};
 
   const toggleDropdown = () => {
     setDropdownOpen(!dropdownOpen);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('spotify_access_token');
+    sessionStorage.removeItem('spotify_access_token');
     window.location.href = '/';
   };
 
@@ -86,12 +194,12 @@ function HomePage() {
     const newMood = {
       id: moodId,
       name: newMoodName,
-      playlist: newMoodPlaylist.split(',').map(song => song.trim()), // Convert input string to array
+      values: emotionValues, // Convert input string to array
     };
 
     try {
       // Add new mood to Firestore (assuming a structure)
-      const username = "Colin"; // get username later
+      const username = sessionStorage.getItem("username"); // get username later
       await setDoc(doc(db, "Users", username), {
         emotions: [...moods, newMood]
       }, { merge: true });
@@ -108,8 +216,19 @@ function HomePage() {
     <div className="flex h-screen bg-gray-900 text-white relative">
       {/* Sidebar */}
       <div className="w-1/5 p-5 bg-gray-800 overflow-y-auto">
+      
   <h2 className="text-2xl font-bold mb-8">MOODS</h2>
+
   <ul className="space-y-4">
+     {/* Add New Mood button */}
+  <li className="text-lg">
+      <button
+        onClick={() => setShowModal(true)}
+        className="w-full text-left bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition duration-300"
+      >
+        Create a New Mood
+      </button>
+    </li>
     {moods.map((mood) => (
       <li key={mood.id} className="text-lg">
         <div
@@ -131,15 +250,6 @@ function HomePage() {
         )}
       </li>
     ))}
-    {/* Add New Mood button */}
-    <li className="text-lg">
-      <button
-        onClick={() => setShowModal(true)}
-        className="w-full text-left bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition duration-300"
-      >
-        Create a New Mood
-      </button>
-    </li>
   </ul>
 </div>
 
@@ -201,42 +311,64 @@ function HomePage() {
           <h2 className="text-2xl font-semibold">Week Wrapped</h2>
         </div>
 
-        {/* Modal for Creating New Mood */}
         {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-gray-800 p-5 rounded shadow-lg">
-              <h2 className="text-xl font-semibold mb-4">Create New Mood</h2>
-              <input
-                type="text"
-                placeholder="Mood Name"
-                value={newMoodName}
-                onChange={(e) => setNewMoodName(e.target.value)}
-                className="mb-2 p-2 rounded w-full bg-gray-700 text-white"
-              />
-              <input
-                type="text"
-                placeholder="Playlist (comma separated)"
-                value={newMoodPlaylist}
-                onChange={(e) => setNewMoodPlaylist(e.target.value)}
-                className="mb-2 p-2 rounded w-full bg-gray-700 text-white"
-              />
-              <div className="flex justify-end">
-                <button
-                  className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded mr-2"
-                  onClick={handleCreateMood}
-                >
-                  Create
-                </button>
-                <button
-                  className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded"
-                  onClick={() => setShowModal(false)}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="bg-gray-800 p-5 rounded shadow-lg">
+      <h2 className="text-xl font-semibold mb-4">Create New Mood</h2>
+      
+      <div className="mb-4">
+        <label className="text-white">Mood Name</label>
+        <input
+          type="text"
+          placeholder="Enter mood name"
+          value={newMoodName}
+          onChange={(e) => setNewMoodName(e.target.value)}
+          className="mb-2 p-2 rounded w-full bg-gray-700 text-white"
+        />
+      </div>
+
+      {/* Emotion Scale Inputs */}
+      <div className="mb-4">
+        <label className="text-white">Distribute emotions (total must equal 100):</label>
+        {["Happy", "Sad", "Calm", "Angry", "Anxious", "Excited"].map((emotion) => (
+          <div key={emotion} className="flex items-center mb-2">
+            <span className="text-white mr-2">{emotion}</span>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              placeholder="0"
+              value={emotionValues[emotion] || 0}
+              onChange={(e) => handleEmotionChange(emotion, e.target.value)}
+              className="p-2 rounded w-16 bg-gray-700 text-white"
+            />
           </div>
+        ))}
+        <p className="text-white">Total: {getTotalEmotions()}</p>
+        {getTotalEmotions() !== 100 && (
+          <p className="text-red-500">Total must equal 100!</p>
         )}
+      </div>
+
+      <div className="flex justify-end">
+        <button
+          className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded mr-2"
+          onClick={handleCreateMood}
+          disabled={getTotalEmotions() !== 100} // Disable if total is not 100
+        >
+          Create
+        </button>
+        <button
+          className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded"
+          onClick={() => setShowModal(false)}
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
       </div>
     </div>
   );
@@ -248,7 +380,7 @@ function Profile() {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const token = localStorage.getItem('spotify_access_token');
+      const token = sessionStorage.getItem('spotify_access_token');
       if (!token) return;
 
       try {

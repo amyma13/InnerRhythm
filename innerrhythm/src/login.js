@@ -44,6 +44,15 @@ const Login = () => {
         }
     }, []);
 
+    const [emotionValues, setEmotionValues] = useState({
+        Happy: 0,
+        Sad: 0,
+        Calm: 0,
+        Angry: 0,
+        Anxious: 0,
+        Excited: 0,
+    });
+    // const happy = {name: "happy", happy: 100, }
     const uploadProfileFirebase = async (username) => {
         try {
             const findDoc = doc(db, "Users", username);

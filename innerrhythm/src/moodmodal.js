@@ -1,12 +1,40 @@
 import React, { useState } from 'react';
 
 const MoodModal = ({ isOpen, onClose, onAddMood }) => {
-    const [mood, setMood] = useState('');
+    const [moodValues, setMoodValues] = useState({
+        happy: 0,
+        sad: 0,
+        calm: 0,
+        excited: 0,
+        angry: 0,
+        anxious: 0,
+    });
+
+    const handleChange = (emotion, value) => {
+        setMoodValues((prevValues) => ({
+            ...prevValues,
+            [emotion]: value,
+        }));
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onAddMood(mood); // Call the function to add the mood
-        setMood(''); // Reset the mood input
+        const total = Object.values(moodValues).reduce((acc, val) => acc + parseInt(val), 0);
+
+        if (total !== 100) {
+            alert("The total of all emotions must equal 100.");
+            return;
+        }
+
+        onAddMood(moodValues); // Call the function to add the mood
+        setMoodValues({
+            happy: 0,
+            sad: 0,
+            calm: 0,
+            excited: 0,
+            angry: 0,
+            anxious: 0,
+        }); // Reset the mood input
         onClose(); // Close the modal
     };
 
@@ -15,16 +43,22 @@ const MoodModal = ({ isOpen, onClose, onAddMood }) => {
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
             <div className="bg-white p-6 rounded shadow-lg">
-                <h2 className="text-xl font-bold mb-4">Add a New Mood</h2>
+                <h2 className="text-xl font-bold mb-4">Add Your Mood</h2>
                 <form onSubmit={handleSubmit}>
-                    <input
-                        type="text"
-                        value={mood}
-                        onChange={(e) => setMood(e.target.value)}
-                        placeholder="Enter your mood"
-                        className="border border-gray-400 p-2 rounded w-full mb-4"
-                        required
-                    />
+                    {Object.keys(moodValues).map((emotion) => (
+                        <div key={emotion} className="mb-4">
+                            <label className="block text-gray-700">{emotion.charAt(0).toUpperCase() + emotion.slice(1)}</label>
+                            <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={moodValues[emotion]}
+                                onChange={(e) => handleChange(emotion, e.target.value)}
+                                className="w-full"
+                            />
+                            <span className="text-gray-600">{moodValues[emotion]}%</span>
+                        </div>
+                    ))}
                     <div className="flex justify-end">
                         <button
                             type="button"
