@@ -1,27 +1,24 @@
 import logo from './logo.svg';
 import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom'
+
+import Login from './login';
+import HomePage from './homepage';
+import Mood from './mood';
+import toptracks from './toptracks';
+
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-            INNER RHYTHM
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-        <h1 className="text-3xl font-bold underline">
-      Testing Tailwind!
-    </h1>
-      </header>
-    </div>
+    <Router>
+    <Switch>
+      <Route path="/" exact component={Login} />
+      <Route path="/homepage" exact component={HomePage} />
+      <Route path="/mood" exact component={Mood} />
+      <Route path="/toptracks" exact component={toptracks} />
+      </Switch>
+    </Router>
   );
 }
 
