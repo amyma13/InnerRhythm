@@ -26,7 +26,7 @@ const MoodModal = ({ isOpen, onClose, onAddMood }) => {
             return;
         }
 
-        onAddMood(moodValues); // Call the function to add the mood
+        onAddMood(moodValues); 
         setMoodValues({
             happy: 0,
             sad: 0,
@@ -34,8 +34,8 @@ const MoodModal = ({ isOpen, onClose, onAddMood }) => {
             excited: 0,
             angry: 0,
             anxious: 0,
-        }); // Reset the mood input
-        onClose(); // Close the modal
+        }); 
+        onClose(); 
     };
 
     if (!isOpen) return null;
