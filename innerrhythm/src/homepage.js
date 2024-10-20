@@ -5,6 +5,9 @@ import { collection, doc, setDoc, getDoc, getDocs } from 'firebase/firestore';
 import { Bar } from 'react-chartjs-2'; // Import Bar chart
 import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from 'chart.js';
 
+import { chooseActivity } from './activityRec';
+
+
 // Register chart components
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
 
@@ -35,23 +38,24 @@ function HomePage() {
     anxious: "Stressed"
 };
 
-const checkActiveDevice = async (accessToken) => {
-  const response = await fetch('https://api.spotify.com/v1/me/player/devices', {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
+// const checkActiveDevice = async (accessToken) => {
+//   const response = await fetch('https://api.spotify.com/v1/me/player/devices', {
+//     headers: {
+//       Authorization: `Bearer ${accessToken}`,
+//     },
+//   });
   
-  const data = await response.json();
-  console.log('Active Devices:', data);
-  return data.devices.length > 0; // Returns true if there are active devices
-};
+//   const data = await response.json();
+//   console.log('Active Devices:', data);
+//   return data.devices.length > 0; // Returns true if there are active devices
+// };
 
 const [playlistID, setPlaylistID] = useState("");
 const [songs, setSongs] = useState({});
 
 const fetchRandomSong = async () => {
-  const token = sessionStorage.getItem('spotify_access_token');
+  //const token = sessionStorage.getItem('spotify_access_token');
+  const token ='BQBRQo7s0xd-4uGtBbQqNQ9kJUmx95vEbaZhgw7xPAg_r5T9xfCLSifFWoQIpIkp7ruGUPjcyf_26ly-OTGGv8kBs_h9RlCHOlbjAU4HQZMRaZT2xBde3QZrFa4gShqU8CTDDZLP49vcDkFVbr0r4PQa_YdP7LPQwmNaZMyBWL710ghjvyMtXr98Q3zLg4jHSxhjvFcu7X632rdfJtF7BcJl3IGOOdeBL1lLeH_hf71XO_qZee-EBsJowh5t2SDi9kKJLtOlTjBL';
   try {
     const response = await fetch(`https://api.spotify.com/v1/recommendations?limit=1&seed_genres=pop`, {
       headers: {
@@ -103,7 +107,9 @@ const getActivities = async () => {
   useEffect(() => {
     const token = sessionStorage.getItem('spotify_access_token');
     const fetchData = async () => {
-      const username = sessionStorage.getItem('username');
+    const username = sessionStorage.getItem('username');
+    const result = await chooseActivity();
+    console.log(result)
 
       if (token) {
         try {
@@ -120,6 +126,7 @@ const getActivities = async () => {
       }
 
       console.log(sessionStorage.getItem('currMood'));
+      // console.log
 
       try {
         const findDoc = doc(db, 'Users', username);
@@ -141,39 +148,39 @@ const getActivities = async () => {
   }, []);
 
   
-  const playSong = async (trackId) => {
-    if (!token) {
-      console.error('No access token found.');
-      return;
-    }
+  // const playSong = async (trackId) => {
+  //   if (!token) {
+  //     console.error('No access token found.');
+  //     return;
+  //   }
   
-    const hasActiveDevice = await checkActiveDevice(token);
-    if (!hasActiveDevice) {
-      console.error('No active devices found for playback.');
-      return;
-    }
+  //   const hasActiveDevice = await checkActiveDevice(token);
+  //   if (!hasActiveDevice) {
+  //     console.error('No active devices found for playback.');
+  //     return;
+  //   }
   
-    try {
-      const response = await fetch(`https://api.spotify.com/v1/me/player/play`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          uris: [`spotify:track:${trackId}`],
-        }),
-      });
+  //   try {
+  //     const response = await fetch(`https://api.spotify.com/v1/me/player/play`, {
+  //       method: 'PUT',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Authorization': `Bearer ${token}`,
+  //       },
+  //       body: JSON.stringify({
+  //         uris: [`spotify:track:${trackId}`],
+  //       }),
+  //     });
   
-      if (!response.ok) {
-        const errorResponse = await response.json();
-        console.error('Failed to start playback:', response.statusText, errorResponse);
-      } else {
-        console.log(`Successfully started playing song with ID: ${trackId}`);
-      }
-    } catch (error) {
-      console.error('Error starting playback:', error.message);
-    }
+  //     if (!response.ok) {
+  //       const errorResponse = await response.json();
+  //       console.error('Failed to start playback:', response.statusText, errorResponse);
+  //     } else {
+  //       console.log(`Successfully started playing song with ID: ${trackId}`);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error starting playback:', error.message);
+  //   }
 
   const handleEmotionChange = (emotion, value) => {
     const parsedValue = Math.max(0, Math.min(100, parseInt(value) || 0)); // Ensure the value is between 0 and 100
@@ -302,7 +309,7 @@ const getActivities = async () => {
 
   const searchPlaylist = (query) => {
      // Store your access token here
-     if (!playlists.has(query)){
+     if (!playlists.hasOwnProperty(query)){
         generateRandomEmotionSongs();
      }
     const playlist = playlists[query];
@@ -361,7 +368,7 @@ const getActivities = async () => {
 
 
 
-  const token = 'BQCEqqiWoR8sej1CzW2pZd3J0KtEWgr0u_pp6Xk4lXSEfZTdWjGff6m_kk32v8jCAOw7qhWyzAHMTQ1_WZNcmbHch8haPttiK680FXH1EUOE0TcFo0aTxYG9qgffqqxxzzY2SQFVH3Vpx3a5e02e5h5lgKNRNpBXiZtZ7VKq_IA5CsfM3tEYsX_ezqhOgELOvR1fqBq7jC7_WCZPrtblgeYXZI5MqnEczJsACLxI9_F9SR3oU42VuS0SMKVBB18Qyl15APgjaSSD';
+  const token = 'BQBRQo7s0xd-4uGtBbQqNQ9kJUmx95vEbaZhgw7xPAg_r5T9xfCLSifFWoQIpIkp7ruGUPjcyf_26ly-OTGGv8kBs_h9RlCHOlbjAU4HQZMRaZT2xBde3QZrFa4gShqU8CTDDZLP49vcDkFVbr0r4PQa_YdP7LPQwmNaZMyBWL710ghjvyMtXr98Q3zLg4jHSxhjvFcu7X632rdfJtF7BcJl3IGOOdeBL1lLeH_hf71XO_qZee-EBsJowh5t2SDi9kKJLtOlTjBL';
 
   return (
     <div className="flex h-screen bg-black text-white relative font-sans">
@@ -400,7 +407,7 @@ const getActivities = async () => {
                   </div>
                   <button
                     className="text-[#1DB954] hover:text-green-400 focus:outline-none"
-                    onClick={() => playSong(song.id)} // Example action (replace with your logic)
+                    // onClick={() => playSong(song.id)} 
                   >
                     Play
                   </button>
@@ -415,8 +422,6 @@ const getActivities = async () => {
     )}
   </li>
 ))}
-
-
 
         </ul>
       </div>
@@ -683,10 +688,9 @@ const getActivities = async () => {
             </div>
           </div>
         )}
-        <button onClick={() => searchPlaylist("happy")}> Plz work </button>
       </div>
     </div>
   );
 }
-}
+
 export default HomePage;
