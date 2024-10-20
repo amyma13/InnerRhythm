@@ -13,6 +13,62 @@ const Login = () => {
     const [token, setToken] = useState('');
     const [profile, setProfile] = useState(null);
     const history = useHistory(); // Use useHistory from react-router-dom
+    const defaultEmotions = [
+        {
+            name: "happy",
+            happy: 100,
+            sad: 0,
+            angry: 0,
+            calm: 0,
+            anxious: 0,
+            excited: 0,
+        },
+        {
+            name: "sad",
+            happy: 0,
+            sad: 100,
+            angry: 0,
+            calm: 0,
+            anxious: 0,
+            excited: 0,
+        },
+        {
+            name: "angry",
+            happy: 0,
+            sad: 0,
+            angry: 100,
+            calm: 0,
+            anxious: 0,
+            excited: 0,
+        },
+        {
+            name: "calm",
+            happy: 0,
+            sad: 0,
+            angry: 0,
+            calm: 100,
+            anxious: 0,
+            excited: 0,
+        },
+        {
+            name: "anxious",
+            happy: 0,
+            sad: 0,
+            angry: 0,
+            calm: 0,
+            anxious: 100,
+            excited: 0,
+        },
+        {
+            name: "excited",
+            happy: 100,
+            sad: 0,
+            angry: 0,
+            calm: 0,
+            anxious: 0,
+            excited: 100,
+        }
+    ];
 
     // Function to redirect to Spotify for OAuth
     const handleLogin = () => {
@@ -44,17 +100,19 @@ const Login = () => {
         }
     }, []);
 
-    const [emotionValues, setEmotionValues] = useState({
-        Happy: 0,
-        Sad: 0,
-        Calm: 0,
-        Angry: 0,
-        Anxious: 0,
-        Excited: 0,
-    });
-    // const happy = {name: "happy", happy: 100, }
     const uploadProfileFirebase = async (username) => {
         try {
+            const ref = collection(db, "Users");
+                await setDoc(doc(ref, "Amy"), {
+                    username: "Amy",
+                    emotions: defaultEmotions,
+                    activities: [""],
+                });
+                await setDoc(doc(ref, "Yanns"), {
+                    username: "Yanns",
+                    emotions: defaultEmotions,
+                    activities: [""],
+                });
             const findDoc = doc(db, "Users", username);
             const docUserInfo = await getDoc(findDoc);
             if (docUserInfo.exists()) {
@@ -64,7 +122,7 @@ const Login = () => {
                 const ref = collection(db, "Users");
                 await setDoc(doc(ref, username), {
                     username: username,
-                    emotions: ["happy", "sad", "calm", "angry", "anxious"],
+                    emotions: defaultEmotions,
                     activities: [""],
                 });
                 console.log("Uploaded user")
